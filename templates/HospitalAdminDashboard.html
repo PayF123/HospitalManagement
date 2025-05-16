@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hospital Management Dashboard</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for sidebar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #4f46e5; /* Indigo-600 */
+      border-radius: 10px;
+    }
+    /* Smooth transitions for sidebar collapse */
+    #sidebar {
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-indigo-600 text-indigo-100 w-64 flex flex-col overflow-y-auto md:static fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform z-30">
+      <div class="flex items-center justify-center h-16 shadow-md border-b border-indigo-500">
+        <h1 class="text-2xl font-bold tracking-wide">HospitalSys</h1>
+      </div>
+      <nav class="flex-1 px-4 py-6 space-y-2">
+        <a href="{{ url_for('dashboard') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m16 0v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6m3 4h2a2 2 0 002-2v-3h-6v3a2 2 0 002 2z" />
+          </svg>
+          Dashboard
+        </a>
+        {% if session['role'] == 'user' %}
+        <!-- Button to Open Modal -->
+          <button id="openAddHospitalModal" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Medical Cross (Center) -->
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V18M6 12H18" />
+            <!-- Arrow Outlines (Symbolizing Care/Flow) -->
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 20L8 16M20 4L16 8M20 20L16 16M4 4L8 8" />
+          </svg>Add Hospital</button>
+        <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V8a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2z" />
+          </svg>
+          Patients
+        </a>
+        <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m0 0h8v4m-4 8v6m0-6h-4m4 0h4m-4-4v4m12 4h-6m6 0l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          Appointments
+        </a>
+        <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14H7a2 2 0 01-2-2v-4a2 2 0 012-2h2m4 0h2a2 2 0 012 2v4a2 2 0 01-2 2h-2m-4 4h6m-6 0v-4m6 4v-4" />
+          </svg>
+          Doctors
+        </a>
+        <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 112 0v2m-2-2h6a2 2 0 110 4h-6a2 2 0 110-4zm0-8h6a2 2 0 110 4H7m6-4v4" />
+          </svg>
+          Billing
+        </a>
+        <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 12h2m-1-8v4m-7 10h14a2 2 0 002-2V8a6 6 0 00-6-6H7a6 6 0 00-6 6v6a2 2 0 002 2z" />
+          </svg>
+          Reports
+        </a>
+        {% elif session['role'] == 'hospital' %}
+          <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V8a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2z" />
+            </svg>
+            Patients
+          </a>
+          <a href="#" class="flex items-center px-3 py-2 rounded-md hover:bg-indigo-500 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m0 0h8v4m-4 8v6m0-6h-4m4 0h4m-4-4v4m12 4h-6m6 0l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Appointments
+          </a>
+        {% endif %}
+      </nav>
+
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Topbar -->
+      <header class="flex items-center justify-between bg-white shadow py-3 px-6">
+        <div class="flex items-center space-x-4">
+          <button id="sidebarToggle" class="text-gray-600 focus:outline-none md:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h2 class="text-xl font-semibold text-gray-700">Dashboard</h2>
+        </div>
+        <div class="flex items-center space-x-4">
+          <!-- Notifications -->
+          <button aria-label="Notifications" class="relative text-gray-600 hover:text-indigo-600 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V5a2 2 0 10-4 0v.083A6 6 0 004 11v3.159c0 .538-.214 1.055-.595 1.436L2 17h5m7 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span>
+          </button>
+        
+           <!-- User profile -->
+<div class="relative" onmouseenter="showDropdown()" onmouseleave="hideDropdown()">
+  <button class="flex items-center space-x-2 focus:outline-none">
+    <img class="h-8 w-8 rounded-full border-2 border-indigo-600" src="https://i.pravatar.cc/40" alt="User Avatar" />
+    <span class="text-gray-700 font-medium hidden sm:inline">{{ username }}</span>
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-hover:text-indigo-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+  <div id="dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible transition duration-200 ease-in-out" onmouseenter="showDropdown()" onmouseleave="hideDropdown()">
+    <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-indigo-100">Profile</a>
+    <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-indigo-100">Settings</a>
+    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-100">Logout</a>
+  </div>
+</div>
+          
+        </div>
+      </header>
+
+      <!-- Dashboard content -->
+      <main class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Summary Cards -->
+         {% if session['role'] == 'user' %}
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white rounded-lg shadow p-5 flex items-center space-x-4">
+            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3a3 3 0 01-3 3H9a3 3 0 01-3-3v-3" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12V3m0 0L8 7m4-4l4 4" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold">1285</h3>
+              <p class="text-gray-500">Patients</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-5 flex items-center space-x-4">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V8a2 2 0 012-2h4l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold">76</h3>
+              <p class="text-gray-500">Appointments</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-5 flex items-center space-x-4">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold">34</h3>
+              <p class="text-gray-500">Doctors</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-5 flex items-center space-x-4">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 15h10" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-semibold">$14,720</h3>
+              <p class="text-gray-500">Billing</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent Activity
+        <section class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold border-b border-gray-200 pb-3 mb-4">Recent Appointments</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm font-light">
+              <thead class="border-b border-gray-200 bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3">Patient</th>
+                  <th class="px-6 py-3">Doctor</th>
+                  <th class="px-6 py-3">Date</th>
+                  <th class="px-6 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b hover:bg-indigo-50">
+                  <td class="px-6 py-3">John Doe</td>
+                  <td class="px-6 py-3">Dr. Smith</td>
+                  <td class="px-6 py-3">2024-06-20 09:00 AM</td>
+                  <td class="px-6 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs bg-green-200 text-green-800">Confirmed</span>
+                  </td>
+                </tr>
+                <tr class="border-b hover:bg-indigo-50">
+                  <td class="px-6 py-3">Emily Rose</td>
+                  <td class="px-6 py-3">Dr. James</td>
+                  <td class="px-6 py-3">2024-06-20 10:30 AM</td>
+                  <td class="px-6 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs bg-yellow-200 text-yellow-800">Pending</span>
+                  </td>
+                </tr>
+                <tr class="border-b hover:bg-indigo-50">
+                  <td class="px-6 py-3">Michael Brown</td>
+                  <td class="px-6 py-3">Dr. Wilson</td>
+                  <td class="px-6 py-3">2024-06-21 02:00 PM</td>
+                  <td class="px-6 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs bg-red-200 text-red-800">Cancelled</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section> -->
+
+    <!-- Add Hospital Modal -->
+    <div id="addHospitalModal" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden justify-center items-center">
+      <div class="bg-white rounded-lg shadow-lg p-6 w-1/2">
+        <h2 class="text-lg font-bold mb-4">Add Hospital</h2>
+        <form id="addHospitalForm" action="{{ url_for('add_hospital') }}" method="post">
+          <div class="mb-4">
+            <label for="hospital_name" class="block text-gray-700">Hospital Name:</label>
+            <input type="text" id="hospital_name" name="hospital_name" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <div class="mb-4">
+            <label for="hospital_username" class="block text-gray-700">Username:</label>
+            <input type="text" id="hospital_username" name="hospital_username" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <div class="mb-4">
+            <label for="hospital_password" class="block text-gray-700">Password:</label>
+            <input type="password" id="hospital_password" name="hospital_password" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Add Hospital</button>
+          <button type="button" id="closeAddHospitalModal" class="bg-gray-300 text-gray-700 px-4 py-2 rounded ml-2">Cancel</button>
+        </form>
+      </div>
+    </div>
+    
+  <!-- Hospitals Section -->
+  <section class="bg-white rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold border-b border-gray-200 pb-3 mb-4">Registered Hospitals</h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm font-light">
+        <thead class="border-b border-gray-200 bg-gray-50">
+          <tr>
+            <th class="px-6 py-3">Hospital Name</th>
+            <th class="px-6 py-3">Username</th>
+            <th class="px-6 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for hospital in hospitals %}
+          <tr class="border-b hover:bg-indigo-50">
+            <td class="px-6 py-3">{{ hospital.name }}</td>
+            <td class="px-6 py-3">{{ hospital.username }}</td>
+            <td class="px-6 py-3">
+              <a href="{{ url_for('delete_hospital', hospital_id=hospital.id) }}" class="text-red-600 hover:text-red-800 transition">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+        {% endif %}
+      </main>
+    </div>
+  
+
+  <script>
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    const addHospitalModal = document.getElementById('addHospitalModal');
+    const openAddHospitalModalBtn = document.getElementById('openAddHospitalModal');
+    const closeAddHospitalModalBtn = document.getElementById('closeAddHospitalModal');
+
+    let dropdownTimeout;
+
+
+
+    function showDropdown() {
+      clearTimeout(dropdownTimeout);
+      document.getElementById('dropdown').classList.remove('invisible', 'opacity-0');
+      document.getElementById('dropdown').classList.add('visible', 'opacity-100');
+    }
+
+    function hideDropdown() {
+      dropdownTimeout = setTimeout(() => {
+        document.getElementById('dropdown').classList.remove('visible', 'opacity-100');
+        document.getElementById('dropdown').classList.add('invisible', 'opacity-0');
+      }, 100);
+    }
+
+    function keepDropdown() {
+      clearTimeout(dropdownTimeout);
+    }
+
+    sidebarToggleBtn.addEventListener('click', () => {
+      const isHidden = sidebar.classList.contains('-translate-x-full');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.add('-translate-x-full');
+      overlay.classList.add('hidden');
+    });
+
+    openAddHospitalModalBtn.addEventListener('click', () => {
+      addHospitalModal.classList.remove('hidden');
+      addHospitalModal.classList.add('flex');
+    });
+
+    closeAddHospitalModalBtn.addEventListener('click', () => {
+      addHospitalModal.classList.remove('flex');
+      addHospitalModal.classList.add('hidden');
+    });
+  </script>
+
+
+
+
+  </body>
+</html>

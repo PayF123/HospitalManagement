@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Hospital Management System - Login & Register</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+  /* Override to ensure no scroll on mobile */
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #f3f4f6; /* Tailwind gray-100 */
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #app {
+    max-width: 350px;
+    max-height: 600px;
+    min-height: 600px;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  }
+  .card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+  .input-field {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    outline-offset: 2px;
+    outline-color: transparent;
+    transition: outline-color 0.2s ease;
+  }
+  .input-field:focus {
+    outline-color: #2563eb; /* Tailwind blue-600 */
+    border-color: #2563eb;
+  }
+  .btn-primary {
+    background-color: #2563eb;
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 1.125rem;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: #1d4ed8; /* Tailwind blue-700 */
+    outline: none;
+  }
+  .form-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e40af; /* Tailwind blue-800 */
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 600;
+    padding: 0;
+    margin-top: 1rem;
+    display: block;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+  .error-msg {
+    color: #dc2626; /* Tailwind red-600 */
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="card" id="login-form">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div>
+      {% for category, message in messages %}
+        <div class="error-msg">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+    <div class="form-header">Login to Hospital System</div>
+    <form id="loginForm" action="{{ url_for('login') }}" method="post" novalidate>
+      <div class="mb-4">
+        <input type="text" name="username" id="loginUsername" class="input-field" placeholder="Username" required autocomplete="username" />
+        <div class="error-msg" id="loginUsernameError"></div>
+      </div>
+      <div class="mb-6">
+        <input type="password" name="password" id="loginPassword" class="input-field" placeholder="Password" required autocomplete="current-password" />
+        <div class="error-msg" id="loginPasswordError"></div>
+      </div>
+      <button type="submit" class="btn-primary">Login</button>
+      <button type="button" class="link-btn" id="showRegisterBtn">Don't have an account? Register</button>
+    </form>
+  </div>
+
+  <div class="card" id="register-form"  style="display: none;">
+    <div class="form-header">Register for Hospital System</div>
+    <form id="registerForm" action="{{ url_for('register') }}" method="post" novalidate>
+      <div class="mb-4">
+        <input type="text" id="registerName" name="name" class="input-field" placeholder="Full Name" required autocomplete="name" />
+        <div class="error-msg" id="registerNameError"></div>
+      </div>
+      <div class="mb-4">
+        <input type="text" id="registerUsername" name="username" class="input-field" placeholder="Username" required autocomplete="username" />
+        <div class="error-msg" id="registerUsernameError"></div>
+      </div>
+      <div class="mb-4">
+        <input type="password" id="registerPassword" name="password" class="input-field" placeholder="Password" required autocomplete="new-password" />
+        <div class="error-msg" id="registerPasswordError"></div>
+      </div>
+      <div class="mb-6">
+        <input type="password" id="registerConfirmPassword" name="confirm_password" class="input-field" placeholder="Confirm Password" required autocomplete="new-password" />
+        <div class="error-msg" id="registerConfirmPasswordError"></div>
+      </div>
+      <button type="submit" class="btn-primary">Register</button>
+      <button type="button" class="link-btn" id="showLoginBtn">Already have an account? Login</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Toggle forms
+  const loginFormContainer = document.getElementById('login-form');
+  const registerFormContainer = document.getElementById('register-form');
+  const showRegisterBtn = document.getElementById('showRegisterBtn');
+  const showLoginBtn = document.getElementById('showLoginBtn');
+
+  showRegisterBtn.addEventListener('click', () => {
+    loginFormContainer.style.display = 'none';
+    registerFormContainer.style.display = 'block';
+  });
+
+  showLoginBtn.addEventListener('click', () => {
+    registerFormContainer.style.display = 'none';
+    loginFormContainer.style.display = 'block';
+  });
+
+  // Form validation
+  const loginForm = document.getElementById('loginForm');
+  const loginUsername = document.getElementById('loginUsername');
+  const loginUsernameError = document.getElementById('loginUsernameError');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginPasswordError = document.getElementById('loginPasswordError');
+
+  const registerForm = document.getElementById('registerForm');
+  const registerName = document.getElementById('registerName');
+  const registerUsername = document.getElementById('registerUsername');
+  const registerPassword = document.getElementById('registerPassword');
+  const registerConfirmPassword = document.getElementById('registerConfirmPassword');
+  const registerNameError = document.getElementById('registerNameError');
+  const registerUsernameError = document.getElementById('registerUsernameError');
+  const registerPasswordError = document.getElementById('registerPasswordError');
+  const registerConfirmPasswordError = document.getElementById('registerConfirmPasswordError');
+
+  // function validateEmail(email) {
+  //   const re = /^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$/;
+  //   return re.test(String(email).toLowerCase());
+  // }
+
+  loginForm.addEventListener('submit', (e) => {
+    let valid = true;
+    loginUsernameError.textContent = '';
+    loginPasswordError.textContent = '';
+
+    if (!loginUsername.value) {
+      loginUsernameError.textContent = 'Username is required';
+      valid = false;
+      loginForm.addEvent
+       e.preventDefault(); // Prevent submission only if form is invalid
+    }
+
+    if (!loginPassword.value) {
+      loginPasswordError.textContent = 'Password is required';
+      valid = false;
+      e.preventDefault();
+    }
+
+    if (valid) {
+      return redirect(url_for('dashboard'))
+      loginForm.reset();
+
+    }
+  });
+
+  // registerForm.addEventListener('submit', (e) => {
+  //   e.preventDefault();
+  //   let valid = true;
+  //   registerNameError.textContent = '';
+  //   registerEmailError.textContent = '';
+  //   registerPasswordError.textContent = '';
+  //   registerConfirmPasswordError.textContent = '';
+
+  //   if (!registerName.value.trim()) {
+  //     registerNameError.textContent = 'Full name is required';
+  //     valid = false;
+  //   }
+    
+  //   if (!registerPassword.value) {
+  //     registerPasswordError.textContent = 'Password is required';
+  //     valid = false;
+  //   } else if (registerPassword.value.length < 6) {
+  //     registerPasswordError.textContent = 'Password must be at least 6 characters';
+  //     valid = false;
+  //   }
+  //   if (!registerConfirmPassword.value) {
+  //     registerConfirmPasswordError.textContent = 'Confirm password is required';
+  //     valid = false;
+  //   } else if (registerPassword.value !== registerConfirmPassword.value) {
+  //     registerConfirmPasswordError.textContent = 'Passwords do not match';
+  //     valid = false;
+  //   }
+
+  //   if (valid) {
+  //     alert('Registered successfully! (Demo only)');
+  //     registerForm.reset();
+  //     registerFormContainer.style.display = 'none';
+  //     loginFormContainer.style.display = 'block';
+  //   }
+  // });
+</script>
+</body>
+</html>
