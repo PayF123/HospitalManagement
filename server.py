@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session,flash
+from flask import abort, current_app, Flask, render_template, request, redirect, url_for, session,flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import sqlite3
+import os
+
 
 app = Flask(__name__)
 app.secret_key = 'hospital_management_system'  # Replace with a secure secret key
@@ -170,10 +173,38 @@ def delete_hospital(hospital_id):
 
     return redirect(url_for('dashboard'))
 
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
+
+@app.route('/api/check_hospital', methods=['POST'])
+def check_hospital():
+    data = request.json
+    hospital = Hospital.query.filter_by(username=data.get('hospital_username')).first()
+    return {'exists': bool(hospital)}, 200
+
+
+def get_gui_users_by_hospital(hospital_username):
+    conn = sqlite3.connect('D://Shyam Sir//TKINTER//BCI GUI//instance//users.db')  # Adjust path if needed
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id, username, phone_number FROM users WHERE hospital_username = ?', (hospital_username,))
+    users = cursor.fetchall()
+    conn.close()
+    return users
+
+@app.route('/hospital/<int:hospital_id>/users')
+@login_required
+def view_gui_users(hospital_id):
+    if session.get('role') != 'user':
+        flash("Only admin users can view linked GUI users.")
+        return redirect(url_for('dashboard'))
+
+    hospital = Hospital.query.get_or_404(hospital_id)
+    gui_users = get_gui_users_by_hospital(hospital.username)
+
+    return render_template('hospital_gui_users.html', hospital=hospital, gui_users=gui_users)
 
 
 if __name__ == '__main__':
