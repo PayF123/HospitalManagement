@@ -229,9 +229,7 @@
           <tr class="border-b hover:bg-indigo-50">
             <td class="px-6 py-3">{{ hospital.name }}</td>
             <td class="px-6 py-3">{{ hospital.username }}</td>
-            <!-- <td class="px-6 py-3">
-              <a href="{{ url_for('delete_hospital', hospital_id=hospital.id) }}" class="text-red-600 hover:text-red-800 transition">Delete</a>
-            </td> -->
+
             <!-- Change this line in the hospitals table -->
             <td class="px-6 py-3">
               <a href="{{ url_for('view_gui_users', hospital_id=hospital.id) }}" class="text-blue-600 hover:text-blue-800 transition">View Users</a>
@@ -244,6 +242,38 @@
       </table>
     </div>
   </section>
+      <!-- ✅ Hospital GUI Users Block Goes HERE -->
+         {% elif session['role'] == 'hospital' %}
+    <section class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold border-b border-gray-200 pb-3 mb-4">
+        GUI Users Linked to Your Hospital
+      </h3>
+
+      {% if gui_users %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm font-light">
+          <thead class="border-b border-gray-200 bg-gray-50">
+            <tr>
+              <th class="px-6 py-3">User ID</th>
+              <th class="px-6 py-3">Username</th>
+              <th class="px-6 py-3">Phone Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user_id, username, phone in gui_users %}
+            <tr class="border-b hover:bg-indigo-50">
+              <td class="px-6 py-3">{{ user_id }}</td>
+              <td class="px-6 py-3">{{ username }}</td>
+              <td class="px-6 py-3">{{ phone or '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-gray-500">No GUI users linked to your hospital yet.</p>
+      {% endif %}
+    </section>
         {% endif %}
       </main>
     </div>
