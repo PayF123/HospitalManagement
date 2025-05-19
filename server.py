@@ -78,22 +78,23 @@ def login():
     return render_template('hospital-management-auth.html')
 
 
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    if 'username' in session:
-        username = session['username']
-        user = User.query.filter_by(username=username).first()
-        hospitals = Hospital.query.all()
-        return render_template('HospitalAdminDashboard.html',hospitals=hospitals, username=username)
-    elif session['role'] == 'hospital':
-        username = session['username']
-        hospital = Hospital.query.filter_by(username=username).first()
-        # Render a different template or provide different data for hospitals
-        return render_template('dashboard.html', hospital=hospital,  username=username)
+    username = session.get('username')
+    role = session.get('role')
 
-    else:
-        return redirect(url_for('login'))
+    if role == 'user':
+        hospitals = Hospital.query.all()
+        return render_template('HospitalAdminDashboard.html', hospitals=hospitals, username=username)
+
+    elif role == 'hospital':
+        hospital = Hospital.query.filter_by(username=username).first()
+        gui_users = get_gui_users_by_hospital(hospital.username)
+        return render_template('HospitalAdminDashboard.html', hospital=hospital, gui_users=gui_users, username=username)
+
+    return redirect(url_for('login'))
 
 
 
