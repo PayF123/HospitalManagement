@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import sqlite3
-import os
+import os,csv
 
 
 app = Flask(__name__)
@@ -207,6 +207,111 @@ def view_gui_users(hospital_id):
 
     return render_template('hospital_gui_users.html', hospital=hospital, gui_users=gui_users)
 
+
+
+
+@app.route('/api/upload_session_data', methods=['POST'])
+def upload_session_data():
+    user_id = request.form.get('user_id')
+    session_name = request.form.get('session')
+    
+    session_dir = os.path.join('static', 'session_data', user_id, session_name)
+    os.makedirs(session_dir, exist_ok=True)
+
+    for key in ['baseline', 'attention', 'prediction']:
+        file = request.files.get(key)
+        if file:
+            file.save(os.path.join(session_dir, f"{key}.csv"))
+    
+    return {'status': 'success'}, 200
+
+@app.route('/user/<user_id>/sessions')
+@login_required
+def view_user_sessions(user_id):
+    base_path = os.path.join('static', 'session_data', user_id)
+    if not os.path.exists(base_path):
+        sessions = []
+    else:
+        sessions = [s for s in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, s))]
+    
+    return render_template('view_sessions.html', user_id=user_id, sessions=sessions)
+
+# @app.route('/user/<user_id>/sessions/<session_name>')
+# @login_required
+# def view_session_data(user_id, session_name):
+#     session_path = os.path.join('static', 'session_data', user_id, session_name)
+#     data = {}
+#     for kind in ['baseline', 'attention', 'prediction']:
+#         file_path = os.path.join(session_path, f"{kind}.csv")
+#         if os.path.exists(file_path):
+#             with open(file_path, newline='') as f:
+#                 reader = csv.reader(f)
+#                 headers = next(reader)
+#                 data[kind] = {'headers': headers, 'rows': list(reader)}
+#     return render_template('session_data_view.html', user_id=user_id, session=session_name, data=data)
+
+@app.route('/user/<user_id>/sessions/<session_name>')
+@login_required
+def view_session_data(user_id, session_name):
+    kind = request.args.get('kind', 'baseline')
+    page = int(request.args.get('page', 1))
+    limit = 10  # rows per page
+    offset = (page - 1) * limit
+
+    session_path = os.path.join('static', 'session_data', user_id, session_name)
+    file_path = os.path.join(session_path, f"{kind}.csv")
+
+    total_rows = 0
+    headers, rows = [], []
+
+    if os.path.exists(file_path):
+        with open(file_path, newline='') as f:
+            reader = csv.reader(f)
+            headers = next(reader)
+            all_rows = list(reader)
+            total_rows = len(all_rows)
+            rows = all_rows[offset:offset+limit]
+
+    total_pages = (total_rows + limit - 1) // limit
+    # page_numbers = list(range(1, total_pages + 1))
+    page_numbers = get_pagination_pages(page, total_pages)
+
+    return render_template(
+        'session_data_view.html',
+        user_id=user_id,
+        session=session_name,
+        kind=kind,
+        headers=headers,
+        rows=rows,
+        page=page,
+        total_pages=total_pages,
+        page_numbers=page_numbers
+    )
+
+
+# Pagination logic for smart range with ellipses
+def get_pagination_pages(current, total):
+    pages = []
+
+    if total <= 7:
+        pages = list(range(1, total + 1))
+    else:
+        if current > 3:
+            pages.append(1)
+            if current > 4:
+                pages.append("...")
+
+        start = max(2, current - 2)
+        end = min(total - 1, current + 2)
+
+        pages.extend(range(start, end + 1))
+
+        if current < total - 3:
+            if current < total - 4:
+                pages.append("...")
+            pages.append(total)
+
+    return pages
 
 if __name__ == '__main__':
     app.run(debug=True)
