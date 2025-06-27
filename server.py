@@ -1,4 +1,4 @@
-from flask import abort, current_app, Flask, render_template, request, redirect, url_for, session,flash
+from flask import abort, current_app, Flask, render_template, request, redirect, url_for, session,flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -9,7 +9,8 @@ import os,csv
 app = Flask(__name__)
 app.secret_key = 'hospital_management_system'  # Replace with a secure secret key
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///HospitalData.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/HospitalData.db'
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -24,11 +25,110 @@ class Hospital(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
+@app.route('/api/login_gui_user', methods=['POST'])
+def login_gui_user():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        hashed_password = data.get("password")  # Already hashed from client
+
+        if not username or not hashed_password:
+            return {"error": "Missing fields"}, 400
+
+        # Connect to server-side users.db
+        users_db_path = os.path.join(app.root_path, 'instance', 'users.db')
+        conn = sqlite3.connect(users_db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT user_id, username, phone_number, hospital_username FROM users WHERE username=? AND password=?',
+                       (username, hashed_password))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            return {
+                "user_id": user[0],
+                "username": user[1],
+                "phone_number": user[2],
+                "hospital_username": user[3]
+            }, 200
+        else:
+            return {"error": "Invalid credentials"}, 401
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+
+@app.route('/api/get_latest_gui', methods=['GET'])
+def get_latest_gui():
+    gui_path = os.path.join(app.root_path, 'static', 'latest', 'FinalMain.py')
+    if os.path.exists(gui_path):
+        return send_file(gui_path, as_attachment=True)
+    else:
+        return {'error': 'GUI update not found'}, 404
+
+
+
+@app.route('/api/upload_user', methods=['POST'])
+def upload_user():
+    """Receive and store GUI user data in the server's users.db"""
+    try:
+        data = request.json
+
+        # Extract user data
+        user_id = data.get('user_id')
+        username = data.get('username')
+        phone_number = data.get('phone_number')
+        password = data.get('password')  # Already hashed
+        hospital_username = data.get('hospital_username')
+
+        # Validate required fields
+        if not user_id or not username or not password:
+            return {'error': 'Missing required fields'}, 400
+
+        # Connect to the server's users.db
+        users_db_path = os.path.join(app.root_path, 'instance', 'users.db')
+
+        # Ensure the instance directory exists
+        os.makedirs(os.path.dirname(users_db_path), exist_ok=True)
+
+        conn = sqlite3.connect(users_db_path)
+        cursor = conn.cursor()
+
+        # Create table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                phone_number TEXT UNIQUE,
+                password TEXT NOT NULL,
+                hospital_username TEXT
+            )
+        ''')
+
+        # Check if user already exists
+        cursor.execute('SELECT 1 FROM users WHERE user_id = ? OR username = ?',
+                      (user_id, username))
+        if cursor.fetchone():
+            conn.close()
+            return {'error': 'User already exists'}, 409
+
+        # Insert the new user
+        cursor.execute('''
+            INSERT INTO users (user_id, username, phone_number, password, hospital_username)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, username, phone_number, password, hospital_username))
+
+        conn.commit()
+        conn.close()
+
+        return {'status': 'success', 'message': 'User uploaded successfully'}, 200
+
+    except Exception as e:
+        print(f"Error uploading user: {e}")
+        return {'error': str(e)}, 500
 
 @app.route('/')
 def home():
     return redirect(url_for('login'))
-
 
 
 
@@ -187,10 +287,32 @@ def check_hospital():
     return {'exists': bool(hospital)}, 200
 
 
+
 def get_gui_users_by_hospital(hospital_username):
-    conn = sqlite3.connect('D://Shyam Sir//TKINTER//BCI GUI//instance//users.db')  # Adjust path if needed
+    users_db_path = os.path.join(app.root_path, 'instance', 'users.db')
+
+    # Create the database file if it doesn't exist
+    if not os.path.exists(users_db_path):
+        os.makedirs(os.path.dirname(users_db_path), exist_ok=True)
+        conn = sqlite3.connect(users_db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                phone_number TEXT UNIQUE,
+                password TEXT NOT NULL,
+                hospital_username TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        return []
+
+    conn = sqlite3.connect(users_db_path)
     cursor = conn.cursor()
-    cursor.execute('SELECT user_id, username, phone_number FROM users WHERE hospital_username = ?', (hospital_username,))
+    cursor.execute('SELECT user_id, username, phone_number FROM users WHERE hospital_username = ?',
+                  (hospital_username,))
     users = cursor.fetchall()
     conn.close()
     return users
@@ -208,21 +330,22 @@ def view_gui_users(hospital_id):
     return render_template('hospital_gui_users.html', hospital=hospital, gui_users=gui_users)
 
 
-
-
 @app.route('/api/upload_session_data', methods=['POST'])
 def upload_session_data():
     user_id = request.form.get('user_id')
     session_name = request.form.get('session')
-    
+
     session_dir = os.path.join('static', 'session_data', user_id, session_name)
     os.makedirs(session_dir, exist_ok=True)
 
     for key in ['baseline', 'attention', 'prediction']:
         file = request.files.get(key)
         if file:
+            print(f"Received file for {key}: {file.filename}")
             file.save(os.path.join(session_dir, f"{key}.csv"))
-    
+        else:
+            print(f"No file received for {key}")
+
     return {'status': 'success'}, 200
 
 @app.route('/user/<user_id>/sessions')
@@ -233,7 +356,7 @@ def view_user_sessions(user_id):
         sessions = []
     else:
         sessions = [s for s in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, s))]
-    
+
     return render_template('view_sessions.html', user_id=user_id, sessions=sessions)
 
 # @app.route('/user/<user_id>/sessions/<session_name>')
@@ -273,7 +396,8 @@ def view_session_data(user_id, session_name):
             rows = all_rows[offset:offset+limit]
 
     total_pages = (total_rows + limit - 1) // limit
-    # page_numbers = list(range(1, total_pages + 1))
+
+    # In your view function
     page_numbers = get_pagination_pages(page, total_pages)
 
     return render_template(
@@ -312,6 +436,7 @@ def get_pagination_pages(current, total):
             pages.append(total)
 
     return pages
+
 
 if __name__ == '__main__':
     app.run(debug=True)
